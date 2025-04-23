@@ -1,0 +1,46 @@
+# Core dependencies
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+python-dotenv
+
+# gRPC dependencies
+grpcio
+grpcio-tools
+protobuf
+
+# LLM and NLP dependencies
+transformers
+torch
+sentencepiece
+accelerate  # Required for transformers
+
+# API and data fetching
+google-api-python-client
+pytrends
+httpx
+requests
+
+# Streamlit dependencies (for the web interface)
+streamlit
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+
+# Utilities
+python-dateutil
+tqdm
+loguru
+typing-extensions
+rich  # For terminal UI
+
+# Development tools
+black
+isort
+flake8
+mypy
+pre-commit

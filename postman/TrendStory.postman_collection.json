@@ -1,0 +1,367 @@
+{
+  "info": {
+    "_postman_id": "a7e8f5d9-c1b7-4d34-8e3a-5d9c1b734e45",
+    "name": "TrendStory Microservice",
+    "description": "Collection for testing the TrendStory gRPC service that generates themed stories based on trending topics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Generate Story (YouTube)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has story field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('story');",
+              "    pm.expect(jsonData.story).to.be.a('string');",
+              "    pm.expect(jsonData.story.length).to.be.greaterThan(100);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"youtube\",\n    \"theme\": \"comedy\",\n    \"limit\": 5\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Generate a comedy-themed story based on YouTube trending topics"
+      }
+    },
+    {
+      "name": "Generate Story (TikTok)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has story field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('story');",
+              "    pm.expect(jsonData.story).to.be.a('string');",
+              "    pm.expect(jsonData.story.length).to.be.greaterThan(100);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"tiktok\",\n    \"theme\": \"tragedy\",\n    \"limit\": 3\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Generate a tragedy-themed story based on TikTok trending topics"
+      }
+    },
+    {
+      "name": "Generate Story (Google)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has story field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('story');",
+              "    pm.expect(jsonData.story).to.be.a('string');",
+              "    pm.expect(jsonData.story.length).to.be.greaterThan(100);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"google\",\n    \"theme\": \"sarcasm\",\n    \"limit\": 4\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Generate a sarcastic story based on Google trending topics"
+      }
+    },
+    {
+      "name": "Invalid Source",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Response has error message about invalid source\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData.message).to.include('source');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"invalid_source\",\n    \"theme\": \"comedy\",\n    \"limit\": 5\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Test error handling for invalid source"
+      }
+    },
+    {
+      "name": "Missing Theme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Response has error message about missing theme\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData.message).to.include('theme');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"youtube\",\n    \"theme\": \"\",\n    \"limit\": 5\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Test error handling for missing theme"
+      }
+    },
+    {
+      "name": "Invalid Limit (Too High)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Response has error message about invalid limit\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData.message).to.include('limit');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"youtube\",\n    \"theme\": \"comedy\",\n    \"limit\": 50\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Test error handling for limit that exceeds maximum value"
+      }
+    },
+    {
+      "name": "Invalid Limit (Negative)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Response has error message about invalid limit\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData.message).to.include('limit');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"youtube\",\n    \"theme\": \"comedy\",\n    \"limit\": -1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Test error handling for negative limit value"
+      }
+    },
+    {
+      "name": "Server Error Simulation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 500\", function () {",
+              "    pm.response.to.have.status(500);",
+              "});",
+              "",
+              "pm.test(\"Response has error message\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Test-Error",
+            "value": "true"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"youtube\",\n    \"theme\": \"comedy\",\n    \"limit\": 5\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Test internal server error handling (requires server-side support for X-Test-Error header)"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:50051",
+      "type": "string"
+    }
+  ]
+}
