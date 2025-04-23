@@ -1,106 +1,179 @@
-# TrendStory Architecture
-
-This document outlines the high-level architecture of the TrendStory microservice.
+# TrendStory Microservice Architecture
 
 ## Overview
 
-TrendStory is a gRPC-based microservice that generates themed stories based on trending topics from various sources. The system follows a modular design with clear separation of concerns to ensure maintainability and testability.
+TrendStory is a microservice that generates themed stories based on trending topics from YouTube and Google Trends. The architecture is designed to be modular, scalable, and maintainable, with clear separation of concerns.
 
-## System Components
+## System Architecture
 
-### 1. gRPC API Layer
-
-The gRPC API layer defines the contract between clients and the service using Protocol Buffers. The core functionality is exposed through a single RPC method:
-
-```protobuf
-rpc Generate(GenerateRequest) returns (GenerateResponse)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        TrendStory Microservice                   │
+│                                                                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐   │
+│  │   Trends    │     │             │     │    Story        │   │
+│  │   Fetcher   │────▶│  LLM Engine │────▶│  Generator      │   │
+│  │             │     │             │     │                 │   │
+│  └─────────────┘     └─────────────┘     └─────────────────┘   │
+│         │                  │                      │             │
+│         │                  │                      │             │
+│         ▼                  ▼                      ▼             │
+│  ┌─────────────┐    ┌─────────────┐      ┌─────────────┐      │
+│  │ YouTube API │    │  Hugging    │      │   Theme     │      │
+│  │  Google     │    │  Face       │      │  Templates  │      │
+│  │  Trends     │    │  Models     │      │             │      │
+│  └─────────────┘    └─────────────┘      └─────────────┘      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-This layer is implemented in `main.py` which sets up the gRPC server and registers the service implementation.
+## Components
 
-### 2. Service Layer
+### 1. Trends Fetcher
 
-The service layer (`service.py`) contains the business logic that:
-- Validates incoming requests
-- Coordinates between the trends fetcher and LLM engine
-- Handles errors and returns appropriate responses
+- **Purpose**: Fetches trending topics from various sources
+- **Sources**:
+  - YouTube API
+  - Google Trends
+- **Features**:
+  - Rate limiting
+  - Error handling
+  - Caching
+  - Topic deduplication
 
-### 3. Trends Fetcher Module
+### 2. LLM Engine
 
-The trends fetcher (`trends_fetcher.py`) is responsible for:
-- Fetching trending topics from various sources (YouTube, TikTok, Google)
-- Normalizing the data from different sources
-- Handling API rate limits and errors
+- **Purpose**: Manages language model operations
+- **Features**:
+  - Model loading and caching
+  - Text generation
+  - Token management
+  - Performance optimization
+- **Models**:
+  - Pre-trained language models from Hugging Face
+  - Custom fine-tuned models
 
-### 4. LLM Engine Module
+### 3. Story Generator
 
-The LLM engine (`llm_engine.py`) is responsible for:
-- Loading and managing the language model
-- Constructing appropriate prompts based on the trending topics and desired theme
-- Generating coherent stories using the language model
-- Optimizing for performance and output quality
+- **Purpose**: Creates themed stories from trending topics
+- **Features**:
+  - Theme-based generation
+  - Topic integration
+  - Story structure management
+  - Quality control
+- **Themes**:
+  - Comedy
+  - Tragedy
+  - Sarcasm
+  - Mystery
+  - Romance
+  - Sci-fi
+
+## API Architecture
+
+### REST API (FastAPI)
+
+- **Endpoints**:
+  - `/trends` - Get trending topics
+  - `/generate` - Generate a story
+  - `/themes` - List available themes
+- **Features**:
+  - OpenAPI documentation
+  - Input validation
+  - Error handling
+  - Rate limiting
+
+### gRPC API
+
+- **Services**:
+  - `TrendsService` - Trend fetching
+  - `StoryService` - Story generation
+- **Features**:
+  - Protocol buffers
+  - Bidirectional streaming
+  - Error handling
+  - Authentication
 
 ## Data Flow
 
-```
-┌───────────┐     ┌───────────┐     ┌────────────┐     ┌────────────┐
-│  Client   │────▶│   gRPC    │────▶│  Service   │────▶│   Trends   │
-│  Request  │     │  Server   │     │   Layer    │     │  Fetcher   │
-└───────────┘     └───────────┘     └────────────┘     └────────────┘
-                                          │                  │
-                                          │                  │
-                                          ▼                  ▼
-                                    ┌────────────┐    ┌────────────┐
-                                    │    LLM     │◀───│  Trending  │
-                                    │   Engine   │    │   Topics   │
-                                    └────────────┘    └────────────┘
-                                          │
-                                          │
-                                          ▼
-                                    ┌────────────┐
-                                    │  Generated │
-                                    │   Story    │
-                                    └────────────┘
-```
+1. **Trend Fetching**:
+   - Client requests trends
+   - Trends Fetcher queries APIs
+   - Results are cached and returned
 
-## Asynchronous Design
+2. **Story Generation**:
+   - Client provides topics and theme
+   - LLM Engine processes input
+   - Story Generator creates narrative
+   - Final story is returned
 
-The system leverages Python's async/await features for improved performance:
+3. **Caching**:
+   - Trends are cached for 1 hour
+   - Model outputs are cached
+   - Theme templates are cached
 
-1. gRPC server uses `grpc.aio` for asynchronous request handling
-2. Trend fetching operations are performed asynchronously
-3. LLM inference is wrapped in async functions to prevent blocking
+## Security
 
-## Error Handling Strategy
+- API key management
+- Rate limiting
+- Input validation
+- Error handling
+- Logging and monitoring
 
-The service employs a robust error handling approach:
+## Scalability
 
-1. Input validation using Pydantic models
-2. Graceful handling of external API failures
-3. Proper gRPC status codes for different error scenarios
-4. Detailed error messages for debugging
-5. Automatic retries for transient failures
+- Horizontal scaling support
+- Load balancing
+- Caching strategies
+- Resource management
 
-## Deployment Architecture
+## Monitoring
 
-The service is designed to be deployed as a container with the following characteristics:
+- Performance metrics
+- Error tracking
+- Usage statistics
+- Health checks
 
-1. Lightweight Docker image
-2. Environment variable configuration
-3. Health check endpoints
-4. Metrics for monitoring (optional)
-5. Seamless integration with Hugging Face Spaces
+## Development Guidelines
 
-## Security Considerations
+1. **Code Organization**:
+   - Follow the established directory structure
+   - Use clear naming conventions
+   - Document all public interfaces
 
-1. API keys are stored as environment variables
-2. No sensitive data is logged
-3. Input sanitization to prevent prompt injection
-4. Rate limiting to prevent abuse
+2. **Testing**:
+   - Unit tests for all components
+   - Integration tests for APIs
+   - Performance tests
+   - Load tests
 
-## Future Enhancements
+3. **Documentation**:
+   - API documentation
+   - Code comments
+   - Architecture diagrams
+   - Deployment guides
 
-1. Caching layer for trending topics
-2. Multiple language model support
-3. Content moderation for generated stories
-4. Streaming response support
+## Deployment
+
+- Docker containerization
+- Kubernetes support
+- CI/CD pipeline
+- Environment configuration
+
+## Future Considerations
+
+1. **Scalability**:
+   - Distributed caching
+   - Load balancing
+   - Auto-scaling
+
+2. **Features**:
+   - Additional data sources
+   - More themes
+   - Custom model training
+   - User preferences
+
+3. **Performance**:
+   - Model optimization
+   - Caching improvements
+   - Query optimization
