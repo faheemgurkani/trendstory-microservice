@@ -1,61 +1,39 @@
-# Multi-stage build
-# Stage 1: Build dependencies and proto files
-FROM python:3.10-slim AS builder
+# Build stage
+FROM python:3.10-slim as builder
 
+# Set working directory
 WORKDIR /app
 
-# Install protobuf compiler
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    protobuf-compiler \
-    build-essential && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first to leverage Docker cache
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy proto files
-COPY proto/ proto/
-
-# Generate Python code from proto
-RUN mkdir -p proto && \
-    python -m grpc_tools.protoc \
-    -I. \
-    --python_out=. \
-    --grpc_python_out=. \
-    proto/trendstory.proto
-
-# Stage 2: Runtime image
+# Final stage
 FROM python:3.10-slim
 
+# Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    TRENDSTORY_HOST=0.0.0.0 \
-    TRENDSTORY_PORT=50051
-
-# Install runtime dependencies
-COPY --from=builder /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
-
-# Copy generated protobuf files
-COPY --from=builder /app/proto/ /app/proto/
+# Copy only necessary files from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
-COPY trendstory/ /app/trendstory/
-COPY tests/ /app/tests/
-COPY requirements.txt README.md ./
+COPY . .
 
-# Create model cache directory
-RUN mkdir -p /tmp/trendstory/models && \
-    chmod -R 777 /tmp/trendstory
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-# Expose port for gRPC
-EXPOSE 50051
+# Expose port
+EXPOSE 8000
 
 # Run the application
-CMD ["python", "-m", "trendstory.main"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]

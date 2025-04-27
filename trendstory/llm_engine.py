@@ -22,6 +22,12 @@ class LLMEngine:
         self.generator = None
         self.is_initialized = False
         
+        # Log start of initialization
+        logger.info(f"\n\nStarting async initialization for model {self.model_name}...\n")
+        
+        # Start initialization asynchronously
+        self.init_task = asyncio.create_task(self.initialize())
+        
     async def initialize(self):
         """Initialize the T5 model and tokenizer."""
         if self.is_initialized:
@@ -35,14 +41,18 @@ class LLMEngine:
             loop = asyncio.get_event_loop()
             
             async def load_model_and_tokenizer():
+                logger.info(f"\n\nLoading T5 tokenizer from {self.model_name}...\n")
                 tokenizer = await loop.run_in_executor(
                     None, 
                     lambda: T5Tokenizer.from_pretrained(
                         self.model_name, 
-                        cache_dir=settings.MODEL_CACHE_DIR
+                        cache_dir=settings.MODEL_CACHE_DIR,
+                        legacy=False,  # Use new tokenizer behavior
+                        use_fast=True  # Use fast tokenizer
                     )
                 )
                 
+                logger.info(f"\n\nLoading T5 model from {self.model_name}...\n")
                 model = await loop.run_in_executor(
                     None,
                     lambda: T5ForConditionalGeneration.from_pretrained(
@@ -52,6 +62,7 @@ class LLMEngine:
                     )
                 )
                 
+                logger.info("\n\nCreating text generation pipeline...\n")
                 generator = await loop.run_in_executor(
                     None,
                     lambda: pipeline(
@@ -66,10 +77,13 @@ class LLMEngine:
                 
             self.tokenizer, self.model, self.generator = await load_model_and_tokenizer()
             self.is_initialized = True
-            logger.info(f"Initialized T5 model {self.model_name}")
+            
+            # Log successful initialization and parameter count
+            param_count = sum(p.numel() for p in self.model.parameters())
+            logger.info(f"\n\nInitialized T5 model {self.model_name} with {param_count:,} parameters\n")
             
         except Exception as e:
-            logger.error(f"Error initializing T5 model: {str(e)}")
+            logger.error(f"\nError initializing T5 model: {str(e)}\n")
             raise RuntimeError(f"Failed to initialize T5 model: {str(e)}")
     
     async def generate_story(self, topics: List[str], theme: str) -> Dict[str, Any]:
@@ -82,7 +96,14 @@ class LLMEngine:
         Returns:
             Dictionary containing the generated story and metadata
         """
-        await self.initialize()
+        # Wait for initialization to complete if it's still in progress
+        if not self.is_initialized:
+            try:
+                await self.init_task
+            except Exception as e:
+                # If the initialization task failed, try again
+                logger.warning(f"\nInitialization task failed, retrying: {str(e)}\n")
+                await self.initialize()
         
         # Format the prompt based on the theme
         prompt_template = settings.PROMPT_TEMPLATES.get(
@@ -90,37 +111,44 @@ class LLMEngine:
         )
         
         topics_str = ", ".join(topics)
-        prompt = prompt_template.format(topics=topics_str, theme=theme)
+        
+        # Apply the summarize prefix to the prompt for better T5 generation
+        input_text = f"{prompt_template.format(topics=topics_str, theme=theme)}"
+        
+        # # For, testing
+        # input_text = f"Summarize: Write a trend story using the following trends context and the specified theme: Climate change affecting coastal cities, NASA's new space telescope discoveries, Top 10 upcoming video games in 2025, Celebrity news, Health and wellness tips, Latest tech innovations. Make it funny and witty."
         
         try:
-            # Run generation in executor to avoid blocking
+            # Run in executor to avoid blocking
             loop = asyncio.get_event_loop()
+
+            # Use the text2text-generation pipeline for story generation
+            logger.info(f"\n\nGenerating story with pipeline for theme '{theme}'...\n")
             
-            generation_params = {
-                "max_length": settings.MAX_NEW_TOKENS, 
-                "temperature": settings.TEMPERATURE, 
-                "do_sample": True,
-                "top_p": 0.92,
-                "top_k": 50,
-                "repetition_penalty": 1.1
-            }
+            # Track generation time
+            start_time = datetime.now(timezone.utc)
             
-            result = await loop.run_in_executor(
-                None,
-                lambda: self.generator(
-                    prompt,
-                    **generation_params
-                )
-            )
-            
+            # Run generation via pipeline in executor
+            result = await loop.run_in_executor(None, lambda: self.generator(
+                input_text,
+                max_length=300,
+                num_beams=4,
+                early_stopping=True
+            ))
             # Extract generated text
-            generated_text = result[0]["generated_text"]
+            generated_text = result[0].get('generated_text', '')
+            
+            end_time = datetime.now(timezone.utc)
+            generation_duration = (end_time - start_time).total_seconds()
+            
+            logger.info(f"\n\nStory generated in {generation_duration:.2f} seconds\n")
             
             # Create response with metadata
             response = {
                 "story": generated_text,
                 "metadata": {
-                    "generation_time": datetime.now(timezone.utc).isoformat(),
+                    "generation_time": end_time.isoformat(),
+                    "generation_duration_seconds": generation_duration,
                     "model_name": self.model_name,
                     "theme": theme,
                     "topics_used": topics
@@ -128,7 +156,7 @@ class LLMEngine:
             }
             
             return response
-            
         except Exception as e:
-            logger.error(f"Error generating story with T5: {str(e)}")
-            raise RuntimeError(f"Failed to generate story: {str(e)}")
+            error_msg = f"Error generating story with T5: {str(e)}"
+            logger.error(f"\n{error_msg}\n")
+            raise RuntimeError(error_msg)

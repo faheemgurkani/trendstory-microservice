@@ -98,3 +98,5 @@ dist/
 # Optional Python packaging
 .eggs/
 MANIFEST
+
+rough.py

@@ -19,6 +19,7 @@ accelerate  # Required for transformers
 # API and data fetching
 google-api-python-client
 pytrends
+aiohttp
 httpx
 requests
 
@@ -44,3 +45,10 @@ isort
 flake8
 mypy
 pre-commit
+
+# Documentation
+python-multipart
+
+# Additional dependencies
+psutil
+locust

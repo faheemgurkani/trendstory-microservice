@@ -1,10 +1,13 @@
+# Version control
+.git
+.gitignore
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -21,34 +24,48 @@ wheels/
 .installed.cfg
 *.egg
 
-# Git
-.git
-.gitignore
+# Virtual Environment
+venv/
+env/
+ENV/
 
-# Tests and documentation
-tests/
-docs/
-README.md
-*.md
-postman/
-
-# IDE specific files
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# Local environment files
+# Testing
+tests/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Local development
 .env
 .env.local
-venv/
-.venv/
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Other
+*.log
+*.sqlite
+*.db
+*.bak
+*.tmp
+*.temp
 
 # Streamlit (not needed in the backend container)
 streamlit_app/
 
 # Other unnecessary files
-.pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
+postman/

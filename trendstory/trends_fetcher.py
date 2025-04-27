@@ -1,108 +1,99 @@
 """Module for fetching trending topics from YouTube and Google Trends."""
 
 import logging
-import httpx
-import json
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from datetime import datetime, timedelta
-import googleapiclient.discovery
+import aiohttp
 from pytrends.request import TrendReq
+
 from .config import settings
 
 logger = logging.getLogger(__name__)
 
 class TrendsFetcher:
-    """Class to fetch trending topics from YouTube and Google Trends."""
+    """Class for fetching trending topics from various sources."""
     
     def __init__(self):
         """Initialize the trends fetcher."""
         self.youtube_api_key = settings.YOUTUBE_API_KEY
         self.pytrends = TrendReq(hl='en-US', tz=360)
         
-    async def fetch_trends(self, source: str, limit: int) -> List[str]:
-        """Fetch trending topics from specified source.
+    async def fetch_trends(self, source: str, limit: int = 5) -> List[str]:
+        """Fetch trending topics from the specified source.
         
         Args:
-            source: The source to fetch trends from ("youtube" or "google")
+            source: The source to fetch trends from ('youtube' or 'google')
             limit: Maximum number of trends to return
             
         Returns:
-            List of trending topic strings
-            
-        Raises:
-            ValueError: If the source is not supported
-            RuntimeError: If there's an error fetching trends
+            List of trending topics
         """
-        if source not in ["youtube", "google"]:
-            raise ValueError("Only 'youtube' and 'google' sources are supported")
+        if source.lower() == 'youtube':
+            return await self._fetch_youtube_trends(limit)
+        elif source.lower() == 'google':
+            return await self._fetch_google_trends(limit)
+        else:
+            raise ValueError(f"Unsupported trend source: {source}")
             
-        try:
-            if source == "youtube":
-                return await self._fetch_youtube_trends(limit)
-            else:
-                return await self._fetch_google_trends(limit)
-        except Exception as e:
-            logger.error(f"Error fetching trends from {source}: {str(e)}")
-            raise RuntimeError(f"Failed to fetch trends from {source}: {str(e)}")
-    
     async def _fetch_youtube_trends(self, limit: int) -> List[str]:
-        """Fetch trending videos from YouTube.
-        
-        Args:
-            limit: Maximum number of trends to return
-            
-        Returns:
-            List of trending video titles
-        """
-        # Always use mock data for YouTube as per requirements
-        mock_trends = [
-            "How to make homemade pasta from scratch",
-            "Climate change affecting coastal cities",
-            "DIY smartphone projector",
-            "Secrets to a perfect cup of coffee",
-            "Top 10 upcoming video games in 2025",
-            "Machine learning explained in 5 minutes",
-            "NASA's new space telescope discoveries",
-            "Sustainable living tips for 2025",
-            "Virtual reality gaming revolution",
-            "Artificial intelligence in healthcare"
-        ]
-        
-        # Return a random subset of mock trends
-        import random
-        random.shuffle(mock_trends)
-        return mock_trends[:limit]
-    
-    async def _fetch_google_trends(self, limit: int) -> List[str]:
-        """Fetch trending searches from Google Trends.
-        
-        Args:
-            limit: Maximum number of trends to return
-            
-        Returns:
-            List of trending search terms
-        """
+        """Fetch trending topics from YouTube."""
         try:
-            # Get trending searches
-            self.pytrends.trending_searches(pn='united_states')
-            trends = self.pytrends.trending_searches()
-            return trends[:limit]
-        except Exception as e:
-            logger.error(f"Error fetching Google Trends: {str(e)}")
-            # Fallback to mock data if API fails
+            logger.info("\n\nFetching YouTube trends...\n")
+            
+            # Use mock data for now
             mock_trends = [
-                "Latest tech innovations",
-                "Global weather patterns",
-                "Stock market updates",
-                "Celebrity news",
-                "Sports highlights",
-                "Health and wellness tips",
-                "Travel destinations",
-                "Food recipes",
-                "Fashion trends",
-                "Educational resources"
+                "Climate change affecting coastal cities",
+                "NASA's new space telescope discoveries",
+                "Top 10 upcoming video games in 2025",
+                "Latest smartphone innovations",
+                "Sustainable fashion trends"
             ]
-            import random
-            random.shuffle(mock_trends)
+            
+            logger.info(f"\n\nYouTube trends fetched: {mock_trends[:limit]}\n")
             return mock_trends[:limit]
+            
+        except Exception as e:
+            logger.error(f"\n\nError fetching YouTube trends: {str(e)}\n")
+            raise RuntimeError(f"Failed to fetch YouTube trends: {str(e)}")
+            
+    async def _fetch_google_trends(self, limit: int) -> List[str]:
+        """Fetch trending topics from Google Trends."""
+        try:
+            logger.info("\n\nFetching Google trends...\n")
+            
+            # Use mock data for now
+            mock_trends = [
+                "Celebrity news",
+                "Health and wellness tips",
+                "Latest tech innovations",
+                "Travel destinations 2025",
+                "Home improvement ideas"
+            ]
+            
+            logger.info(f"\n\nGoogle trends fetched: {mock_trends[:limit]}\n")
+            return mock_trends[:limit]
+            
+        except Exception as e:
+            logger.error(f"\n\nError fetching Google Trends: {str(e)}\n")
+            raise RuntimeError(f"Failed to fetch Google Trends: {str(e)}")
+            
+    async def _get_mock_google_trends(self, limit: int) -> List[str]:
+        """Get mock Google trends data."""
+        try:
+            logger.info("\n\nGetting mock Google trends data...\n")
+            
+            mock_trends = [
+                "Celebrity news",
+                "Health and wellness tips",
+                "Latest tech innovations",
+                "Travel destinations 2025",
+                "Home improvement ideas"
+            ]
+            
+            logger.info(f"\n\nMock Google trends fetched: {mock_trends[:limit]}\n")
+            return mock_trends[:limit]
+            
+        except Exception as e:
+            logger.error(f"\n\nError getting mock Google trends: {str(e)}\n")
+            raise RuntimeError(f"Failed to get mock Google trends: {str(e)}")
