@@ -18,6 +18,9 @@ message GenerateRequest {
   
   // Maximum number of trending topics to include
   int32 limit = 3;
+  
+  // Path to image for mood recognition
+  string image_path = 4;
 }
 
 // Response message for Generate RPC
@@ -36,6 +39,9 @@ message GenerateResponse {
   
   // Metadata about the generated story
   StoryMetadata metadata = 5;
+  
+  // Detected mood from image
+  string detected_mood = 6;
 }
 
 // Metadata about the generated story
@@ -51,4 +57,7 @@ message StoryMetadata {
   
   // Theme used for generation
   string theme = 4;
+  
+  // Mood used in story generation
+  string mood = 5;
 }

@@ -38,15 +38,20 @@ class TrendStoryClient:
             logger.error(f"Failed to initialize client: {str(e)}")
             raise
     
-    async def generate_story(self, theme, source="all", limit=5):
+    async def generate_story(self, theme, source="all", limit=5, image_path=None):
         """Generate a story with the given theme and source."""
         try:
             logger.info(f"Sending request - Theme: {theme}, Source: {source}, Limit: {limit}")
+            if image_path:
+                # Convert to absolute path
+                abs_image_path = os.path.abspath(image_path)
+                logger.info(f"Including image for mood recognition: {abs_image_path}")
             
             request = trendstory_pb2.GenerateRequest(
                 theme=theme,
                 source=source,
-                limit=limit
+                limit=limit,
+                image_path=abs_image_path if image_path else ""
             )
             
             logger.info("Waiting for server response...")
@@ -61,11 +66,13 @@ class TrendStoryClient:
             result = {
                 "story": response.story,
                 "topics_used": response.topics_used,
+                "detected_mood": response.detected_mood,
                 "metadata": {
                     "generation_time": response.metadata.generation_time,
                     "model_name": response.metadata.model_name,
                     "source": response.metadata.source,
-                    "theme": response.metadata.theme
+                    "theme": response.metadata.theme,
+                    "mood": response.metadata.mood
                 }
             }
             
@@ -98,7 +105,8 @@ async def main():
         result = await client.generate_story(
             theme="comedy",
             source="all",
-            limit=3
+            limit=3,
+            image_path="test_images/happy.png"  # Updated path to test_images directory
         )
         
         if result:
@@ -114,11 +122,17 @@ async def main():
                 print(f"- {topic}")
             
             print("\n" + "="*50)
+            print("Mood Information:")
+            print("="*50)
+            print(f"Detected Mood: {result['detected_mood']}")
+            print(f"Mood Used in Story: {result['metadata']['mood']}")
+            
+            print("\n" + "="*50)
             print("Metadata:")
             print("="*50)
             for key, value in result["metadata"].items():
                 print(f"{key}: {value}")
-            # print("="*50 + "\n")
+            print()
         else:
             logger.error("Failed to generate story")
     

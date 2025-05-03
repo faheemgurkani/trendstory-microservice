@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     
     # API Keys
     YOUTUBE_API_KEY: Optional[str] = None
+    NEWS_API_KEY: Optional[str] = "b5553985c67b423e9758ac3177c4d905"
     
     # Google Trends settings
     GOOGLE_TRENDS_REGION: str = "united_states"

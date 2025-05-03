@@ -86,12 +86,13 @@ class LLMEngine:
             logger.error(f"\nError initializing T5 model: {str(e)}\n")
             raise RuntimeError(f"Failed to initialize T5 model: {str(e)}")
     
-    async def generate_story(self, topics: List[str], theme: str) -> Dict[str, Any]:
+    async def generate_story(self, topics: List[str], theme: str, mood: Optional[str] = None) -> Dict[str, Any]:
         """Generate a story based on trending topics and theme using T5.
         
         Args:
             topics: List of trending topics to include in the story
             theme: The theme of the story
+            mood: Optional mood to influence the story tone
             
         Returns:
             Dictionary containing the generated story and metadata
@@ -112,8 +113,11 @@ class LLMEngine:
         
         topics_str = ", ".join(topics)
         
+        # Include mood in the prompt if provided
+        mood_context = f" with a {mood} tone" if mood else ""
+        
         # Apply the summarize prefix to the prompt for better T5 generation
-        input_text = f"{prompt_template.format(topics=topics_str, theme=theme)}"
+        input_text = f"{prompt_template.format(topics=topics_str, theme=theme)}{mood_context}"
         
         # # For, testing
         # input_text = f"Summarize: Write a trend story using the following trends context and the specified theme: Climate change affecting coastal cities, NASA's new space telescope discoveries, Top 10 upcoming video games in 2025, Celebrity news, Health and wellness tips, Latest tech innovations. Make it funny and witty."
@@ -123,7 +127,7 @@ class LLMEngine:
             loop = asyncio.get_event_loop()
 
             # Use the text2text-generation pipeline for story generation
-            logger.info(f"\n\nGenerating story with pipeline for theme '{theme}'...\n")
+            logger.info(f"\n\nGenerating story with pipeline for theme '{theme}' and mood '{mood or 'neutral'}'...\n")
             
             # Track generation time
             start_time = datetime.now(timezone.utc)
@@ -151,6 +155,7 @@ class LLMEngine:
                     "generation_duration_seconds": generation_duration,
                     "model_name": self.model_name,
                     "theme": theme,
+                    "mood": mood or "neutral",
                     "topics_used": topics
                 }
             }

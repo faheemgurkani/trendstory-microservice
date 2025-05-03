@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from proto import trendstory_pb2 as trendstory__pb2
+from proto import trendstory_pb2 as proto_dot_trendstory__pb2
 
 GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in trendstory_pb2_grpc.py depends on'
+        + f' but the generated code in proto/trendstory_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -37,8 +37,8 @@ class TrendStoryStub(object):
         """
         self.Generate = channel.unary_unary(
                 '/trendstory.TrendStory/Generate',
-                request_serializer=trendstory__pb2.GenerateRequest.SerializeToString,
-                response_deserializer=trendstory__pb2.GenerateResponse.FromString,
+                request_serializer=proto_dot_trendstory__pb2.GenerateRequest.SerializeToString,
+                response_deserializer=proto_dot_trendstory__pb2.GenerateResponse.FromString,
                 _registered_method=True)
 
 
@@ -58,8 +58,8 @@ def add_TrendStoryServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Generate': grpc.unary_unary_rpc_method_handler(
                     servicer.Generate,
-                    request_deserializer=trendstory__pb2.GenerateRequest.FromString,
-                    response_serializer=trendstory__pb2.GenerateResponse.SerializeToString,
+                    request_deserializer=proto_dot_trendstory__pb2.GenerateRequest.FromString,
+                    response_serializer=proto_dot_trendstory__pb2.GenerateResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -88,8 +88,8 @@ class TrendStory(object):
             request,
             target,
             '/trendstory.TrendStory/Generate',
-            trendstory__pb2.GenerateRequest.SerializeToString,
-            trendstory__pb2.GenerateResponse.FromString,
+            proto_dot_trendstory__pb2.GenerateRequest.SerializeToString,
+            proto_dot_trendstory__pb2.GenerateResponse.FromString,
             options,
             channel_credentials,
             insecure,

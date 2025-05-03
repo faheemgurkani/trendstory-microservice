@@ -9,6 +9,7 @@ from concurrent import futures
 import grpc
 from trendstory.llm_engine import LLMEngine
 from trendstory.trends_fetcher import TrendsFetcher
+from trendstory.mood_recognizer import MoodRecognizer
 from proto import trendstory_pb2, trendstory_pb2_grpc
 
 # Configure logging
@@ -33,12 +34,38 @@ class TrendStoryServicer(trendstory_pb2_grpc.TrendStoryServicer):
         logger.info("Initializing TrendStoryServicer...")
         self.llm_engine = LLMEngine()
         self.trends_fetcher = TrendsFetcher()
+        self.mood_recognizer = MoodRecognizer()
         logger.info("TrendStoryServicer initialized successfully")
     
     async def Generate(self, request, context):
         """Generate a story based on trending topics and theme."""
         try:
             logger.info(f"Received Generate request - Theme: {request.theme}, Source: {request.source}, Limit: {request.limit}")
+            
+            # Recognize mood from image if provided
+            detected_mood = None
+            if request.image_path and request.image_path.strip():
+                image_path = request.image_path.strip()
+                logger.info(f"Analyzing mood from image: {image_path}")
+                
+                # Verify image exists
+                if not os.path.exists(image_path):
+                    error_msg = f"Image file not found: {image_path}"
+                    logger.error(error_msg)
+                    context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+                    context.set_details(error_msg)
+                    return trendstory_pb2.GenerateResponse()
+                
+                try:
+                    moods = self.mood_recognizer.recognize_mood(image_path)
+                    if moods and moods[0] != "error":
+                        detected_mood = moods[0]
+                        logger.info(f"Detected mood: {detected_mood}")
+                    else:
+                        logger.warning("Failed to detect mood from image")
+                except Exception as e:
+                    logger.error(f"Error in mood recognition: {str(e)}")
+                    detected_mood = "neutral"
             
             # Fetch trends based on source
             logger.info(f"Fetching trends from source: {request.source}")
@@ -67,7 +94,8 @@ class TrendStoryServicer(trendstory_pb2_grpc.TrendStoryServicer):
             logger.info(f"Generating story with theme: {request.theme}")
             result = await self.llm_engine.generate_story(
                 topics=topics,
-                theme=request.theme
+                theme=request.theme,
+                mood=detected_mood  # Pass detected mood to story generation
             )
             logger.info("Story generated successfully")
             
@@ -76,7 +104,8 @@ class TrendStoryServicer(trendstory_pb2_grpc.TrendStoryServicer):
                 generation_time=time.strftime("%Y-%m-%d %H:%M:%S"),
                 model_name=os.getenv("TRENDSTORY_MODEL_NAME", "t5-small"),
                 source=request.source,
-                theme=request.theme
+                theme=request.theme,
+                mood=detected_mood or "neutral"  # Include mood in metadata
             )
             
             response = trendstory_pb2.GenerateResponse(
@@ -84,7 +113,8 @@ class TrendStoryServicer(trendstory_pb2_grpc.TrendStoryServicer):
                 status_code=0,
                 error_message="",
                 topics_used=topics,
-                metadata=metadata
+                metadata=metadata,
+                detected_mood=detected_mood or "neutral"  # Include detected mood in response
             )
             logger.info("Response prepared successfully")
             return response
