@@ -110,39 +110,30 @@ from .news_api_loader import NewsAPILoader
 
 logger = logging.getLogger(__name__)
 
-
-
 class TrendsFetcher:
     """Class for fetching 'trending' topics via NewsAPI articles."""
 
     def __init__(self):
         """Initialize the trends fetcher."""
-        self.youtube_api_key = settings.YOUTUBE_API_KEY
+        # self.youtube_api_key = settings.YOUTUBE_API_KEY  # Commented out as we're only using news
         self.news_loader = NewsAPILoader(settings.NEWS_API_KEY)
 
     async def fetch_trends(self, source: str, limit: int = 5) -> List[str]:
         """
-        Fetch trending topics from the specified source:
-        'youtube', 'google', or 'news'.
+        Fetch trending topics from NewsAPI.
+        The source parameter is kept for compatibility but only 'news' is supported.
         """
-        source = source.lower()
+        # source = source.lower()  # Commented out as we're only using news
+        # if source in ('youtube', 'google', 'news'):  # Commented out as we're only using news
+        return await self._fetch_news_titles(limit)
+        # else:  # Commented out as we're only using news
+        #     raise ValueError(f"Unsupported trend source: {source}")  # Commented out as we're only using news
 
-        if source in ('youtube', 'google', 'news'):
-            return await self._fetch_news_titles(source, limit)
-        else:
-            raise ValueError(f"Unsupported trend source: {source}")
-
-    async def _fetch_news_titles(self, source: str, limit: int) -> List[str]:
+    async def _fetch_news_titles(self, limit: int) -> List[str]:
         """
-        Query NewsAPI for the latest articles based on the source
-        and return their titles.
+        Query NewsAPI for the latest articles and return their titles.
         """
-        if source == "youtube":
-            query = "YouTube Trending Topics"
-        elif source == "google":
-            query = "Google Trending Topics"
-        else:  # for 'news'
-            query = "Technology"  # or any other general-purpose topic
+        query = "Technology"  # General-purpose topic for news
 
         from_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
         
@@ -160,8 +151,7 @@ class TrendsFetcher:
                 "publishedAt"
             )
         except Exception as e:
-            logger.error(f"Error fetching news trends for {source}: {e}")
-
+            logger.error(f"Error fetching news trends: {e}")
             return []
 
         if not articles:
@@ -169,32 +159,14 @@ class TrendsFetcher:
 
         titles = [a.get("title", "").strip() for a in articles]
 
-        logger.info(f"Fetched {len(titles)} '{source}' news titles: {titles}")
+        logger.info(f"Fetched {len(titles)} news titles: {titles}")
 
         return titles[:limit]
 
 async def main():
     fetcher = TrendsFetcher()
 
-    print("\nFetching YouTube trends...\n")
-
-    youtube_trends = await fetcher.fetch_trends("youtube", limit=5)
-
-    print("YouTube Trends:")
-
-    for trend in youtube_trends:
-        print(f"- {trend}")
-
-    print("\nFetching Google trends...\n")
-
-    google_trends = await fetcher.fetch_trends("google", limit=5)
-
-    print("Google Trends:")
-
-    for trend in google_trends:
-        print(f"- {trend}")
-
-    print("\nFetching General News trends...\n")
+    print("\nFetching News trends...\n")
 
     news_trends = await fetcher.fetch_trends("news", limit=5)
 
@@ -202,8 +174,6 @@ async def main():
 
     for trend in news_trends:
         print(f"- {trend}")
-
-
 
 if __name__ == "__main__":
     asyncio.run(main())

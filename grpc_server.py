@@ -67,24 +67,13 @@ class TrendStoryServicer(trendstory_pb2_grpc.TrendStoryServicer):
                     logger.error(f"Error in mood recognition: {str(e)}")
                     detected_mood = "neutral"
             
-            # Fetch trends based on source
-            logger.info(f"Fetching trends from source: {request.source}")
-            youtube_trends = []
-            google_trends = []
-            
-            if request.source in ["youtube", "all"]:
-                youtube_trends = await self.trends_fetcher.fetch_trends("youtube", limit=request.limit)
-                logger.info(f"Fetched {len(youtube_trends)} YouTube trends")
-            
-            if request.source in ["google", "all"]:
-                google_trends = await self.trends_fetcher.fetch_trends("google", limit=request.limit)
-                logger.info(f"Fetched {len(google_trends)} Google trends")
-            
-            topics = youtube_trends + google_trends
-            logger.info(f"Total topics fetched: {len(topics)}")
+            # Fetch trends (only once, regardless of source)
+            logger.info("Fetching trends from news source")
+            topics = await self.trends_fetcher.fetch_trends("news", limit=request.limit)
+            logger.info(f"Fetched {len(topics)} topics")
             
             if not topics:
-                error_msg = "Failed to fetch trending topics from any source"
+                error_msg = "Failed to fetch trending topics"
                 logger.error(error_msg)
                 context.set_code(grpc.StatusCode.INTERNAL)
                 context.set_details(error_msg)
