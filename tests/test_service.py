@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from trendstory.service import TrendStoryServicer
-from proto import trendstory_pb2
+from trendstory.proto import trendstory_pb2
 
 class TestTrendStoryService(unittest.TestCase):
     """Test cases for TrendStory service."""

@@ -1,179 +1,233 @@
-# """Module for fetching trending topics from YouTube and Google Trends."""
-
-# import logging
-# import asyncio
-# from typing import List, Dict, Any
-# from datetime import datetime, timedelta
-# import aiohttp
-# from pytrends.request import TrendReq
-
-# from .config import settings
-
-# logger = logging.getLogger(__name__)
-
-# class TrendsFetcher:
-#     """Class for fetching trending topics from various sources."""
-    
-#     def __init__(self):
-#         """Initialize the trends fetcher."""
-#         self.youtube_api_key = settings.YOUTUBE_API_KEY
-#         self.pytrends = TrendReq(hl='en-US', tz=360)
-        
-#     async def fetch_trends(self, source: str, limit: int = 5) -> List[str]:
-#         """Fetch trending topics from the specified source.
-        
-#         Args:
-#             source: The source to fetch trends from ('youtube' or 'google')
-#             limit: Maximum number of trends to return
-            
-#         Returns:
-#             List of trending topics
-#         """
-#         if source.lower() == 'youtube':
-#             return await self._fetch_youtube_trends(limit)
-#         elif source.lower() == 'google':
-#             return await self._fetch_google_trends(limit)
-#         else:
-#             raise ValueError(f"Unsupported trend source: {source}")
-            
-#     async def _fetch_youtube_trends(self, limit: int) -> List[str]:
-#         """Fetch trending topics from YouTube."""
-#         try:
-#             logger.info("\n\nFetching YouTube trends...\n")
-            
-#             # Use mock data for now
-#             mock_trends = [
-#                 "Climate change affecting coastal cities",
-#                 "NASA's new space telescope discoveries",
-#                 "Top 10 upcoming video games in 2025",
-#                 "Latest smartphone innovations",
-#                 "Sustainable fashion trends"
-#             ]
-            
-#             logger.info(f"\n\nYouTube trends fetched: {mock_trends[:limit]}\n")
-#             return mock_trends[:limit]
-            
-#         except Exception as e:
-#             logger.error(f"\n\nError fetching YouTube trends: {str(e)}\n")
-#             raise RuntimeError(f"Failed to fetch YouTube trends: {str(e)}")
-            
-#     async def _fetch_google_trends(self, limit: int) -> List[str]:
-#         """Fetch trending topics from Google Trends."""
-#         try:
-#             logger.info("\n\nFetching Google trends...\n")
-            
-#             # Use mock data for now
-#             mock_trends = [
-#                 "Celebrity news",
-#                 "Health and wellness tips",
-#                 "Latest tech innovations",
-#                 "Travel destinations 2025",
-#                 "Home improvement ideas"
-#             ]
-            
-#             logger.info(f"\n\nGoogle trends fetched: {mock_trends[:limit]}\n")
-#             return mock_trends[:limit]
-            
-#         except Exception as e:
-#             logger.error(f"\n\nError fetching Google Trends: {str(e)}\n")
-#             raise RuntimeError(f"Failed to fetch Google Trends: {str(e)}")
-            
-#     async def _get_mock_google_trends(self, limit: int) -> List[str]:
-#         """Get mock Google trends data."""
-#         try:
-#             logger.info("\n\nGetting mock Google trends data...\n")
-            
-#             mock_trends = [
-#                 "Celebrity news",
-#                 "Health and wellness tips",
-#                 "Latest tech innovations",
-#                 "Travel destinations 2025",
-#                 "Home improvement ideas"
-#             ]
-            
-#             logger.info(f"\n\nMock Google trends fetched: {mock_trends[:limit]}\n")
-#             return mock_trends[:limit]
-            
-#         except Exception as e:
-#             logger.error(f"\n\nError getting mock Google trends: {str(e)}\n")
-#             raise RuntimeError(f"Failed to get mock Google trends: {str(e)}")
-
-
+"""Module for fetching trending topics."""
 
 import logging
 import asyncio
-from datetime import datetime, timedelta
-from typing import List
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta, timezone
+import random
 
-from .config import settings
 from .news_api_loader import NewsAPILoader
+from .config import Settings
 
 logger = logging.getLogger(__name__)
 
 class TrendsFetcher:
-    """Class for fetching 'trending' topics via NewsAPI articles."""
-
-    def __init__(self):
-        """Initialize the trends fetcher."""
-        # self.youtube_api_key = settings.YOUTUBE_API_KEY  # Commented out as we're only using news
-        self.news_loader = NewsAPILoader(settings.NEWS_API_KEY)
-
-    async def fetch_trends(self, source: str, limit: int = 5) -> List[str]:
-        """
-        Fetch trending topics from NewsAPI.
-        The source parameter is kept for compatibility but only 'news' is supported.
-        """
-        # source = source.lower()  # Commented out as we're only using news
-        # if source in ('youtube', 'google', 'news'):  # Commented out as we're only using news
-        return await self._fetch_news_titles(limit)
-        # else:  # Commented out as we're only using news
-        #     raise ValueError(f"Unsupported trend source: {source}")  # Commented out as we're only using news
-
-    async def _fetch_news_titles(self, limit: int) -> List[str]:
-        """
-        Query NewsAPI for the latest articles and return their titles.
-        """
-        query = "Technology"  # General-purpose topic for news
-
-        from_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    """Class for fetching trending topics from various sources."""
+    
+    def __init__(self, settings: Optional[Settings] = None):
+        """Initialize the trends fetcher.
         
-        loop = asyncio.get_running_loop()
-
+        Args:
+            settings: Application settings containing API keys
+        """
+        self.settings = settings or Settings()
+        logger.info(f"Initializing TrendsFetcher with NEWS_API_KEY ending in '...{self.settings.NEWS_API_KEY[-4:]}'")
+        self.news_api_loader = NewsAPILoader(self.settings.NEWS_API_KEY)
+        
+        # Topic categories for varied searches - using NewsAPI categories
+        self.topic_categories = [
+            "business", "technology", "science", "health", 
+            "entertainment", "sports", "general"
+        ]
+        
+    async def fetch_trends(self, source: str, limit: int = 5) -> List[str]:
+        """Fetch trending topics from the specified source.
+        
+        Args:
+            source: The source to fetch trends from ('youtube', 'google', or 'all')
+            limit: Maximum number of trends to return
+            
+        Returns:
+            List of trending topics
+        """
+        logger.info(f"Fetching {limit} trending topics from {source}")
+        
+        if source == "youtube":
+            return await self._fetch_youtube_trends(limit)
+        elif source == "google":
+            return await self._fetch_google_trends(limit)
+        elif source == "all":
+            youtube_trends = await self._fetch_youtube_trends(limit // 2)
+            google_trends = await self._fetch_google_trends(limit - len(youtube_trends))
+            combined_trends = youtube_trends + google_trends
+            return combined_trends[:limit]
+        else:
+            logger.warning(f"Unknown source: {source}, falling back to Google trends")
+            return await self._fetch_google_trends(limit)
+            
+    async def _fetch_youtube_trends(self, limit: int) -> List[str]:
+        """Fetch trending topics from YouTube."""
         try:
-            articles = await loop.run_in_executor(
-                None,
-                self.news_loader.fetch_news,
-                query,
-                from_date,
-                None,
-                limit,
-                "en",
-                "publishedAt"
-            )
+            # Select random categories for diversity
+            categories = random.sample(self.topic_categories, min(3, len(self.topic_categories)))
+            logger.info(f"Selected categories for YouTube trends: {categories}")
+            
+            all_trends = []
+            for category in categories:
+                # Run in executor to prevent blocking
+                loop = asyncio.get_event_loop()
+                
+                logger.info(f"Making NewsAPI request for category '{category}'")
+                articles = await loop.run_in_executor(
+                    None, 
+                    lambda: self.news_api_loader.fetch_news(
+                        query=category,
+                        page_size=5,
+                        sort_by="popularity"
+                    )
+                )
+                
+                if articles is None:
+                    logger.error(f"NewsAPI request failed for category '{category}'")
+                    continue
+                    
+                logger.info(f"NewsAPI response for category '{category}': {articles}")
+                
+                if articles:
+                    # Extract titles as trends and filter out unwanted topics
+                    trends = []
+                    for article in articles:
+                        title = article.get('title', '')
+                        if not title:
+                            continue
+                            
+                        # Skip articles with future dates
+                        published_at = article.get('publishedAt')
+                        if published_at:
+                            try:
+                                article_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                                if article_date > datetime.now(timezone.utc):
+                                    logger.warning(f"Skipping future article: {title}")
+                                    continue
+                            except ValueError:
+                                logger.warning(f"Invalid date format: {published_at}")
+                                continue
+                        
+                        # Skip articles with specific unwanted phrases
+                        if any(phrase in title.lower() for phrase in [
+                            "gold house", "nasdaq", "power summit", "a100",
+                            "mike waltz", "left the chat", "night court",
+                            "season 3", "daily litg"
+                        ]):
+                            logger.warning(f"Skipping unwanted article: {title}")
+                            continue
+                            
+                        trends.append(title)
+                        
+                    logger.info(f"Fetched {len(trends)} trends for category '{category}'")
+                    all_trends.extend(trends)
+                else:
+                    logger.warning(f"No articles returned for category '{category}'")
+            
+            # Deduplicate and limit
+            unique_trends = list(dict.fromkeys(all_trends))
+            logger.info(f"Fetched {len(unique_trends)} unique YouTube trends")
+            
+            if not unique_trends:
+                logger.error("API failed - no trends fetched")
+                return []
+            
+            return unique_trends[:limit]
+            
         except Exception as e:
-            logger.error(f"Error fetching news trends: {e}")
+            logger.error(f"Error fetching YouTube trends: {str(e)}")
+            logger.error("API failed due to error")
             return []
-
-        if not articles:
+            
+    async def _fetch_google_trends(self, limit: int) -> List[str]:
+        """Fetch trending topics from Google News."""
+        try:
+            # Select random categories for diversity
+            categories = random.sample(self.topic_categories, min(3, len(self.topic_categories)))
+            logger.info(f"Selected categories for Google trends: {categories}")
+            
+            all_trends = []
+            for category in categories:
+                # Run in executor to prevent blocking
+                loop = asyncio.get_event_loop()
+                
+                logger.info(f"Making NewsAPI request for category '{category}'")
+                articles = await loop.run_in_executor(
+                    None, 
+                    lambda: self.news_api_loader.fetch_news(
+                        query=category,
+                        page_size=5,
+                        sort_by="relevancy"
+                    )
+                )
+                
+                if articles is None:
+                    logger.error(f"NewsAPI request failed for category '{category}'")
+                    continue
+                    
+                logger.info(f"NewsAPI response for category '{category}': {articles}")
+                
+                if articles:
+                    # Extract titles as trends and filter out unwanted topics
+                    trends = []
+                    for article in articles:
+                        title = article.get('title', '')
+                        if not title:
+                            continue
+                            
+                        # Skip articles with future dates
+                        published_at = article.get('publishedAt')
+                        if published_at:
+                            try:
+                                article_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                                if article_date > datetime.now(timezone.utc):
+                                    logger.warning(f"Skipping future article: {title}")
+                                    continue
+                            except ValueError:
+                                logger.warning(f"Invalid date format: {published_at}")
+                                continue
+                        
+                        # Skip articles with specific unwanted phrases
+                        if any(phrase in title.lower() for phrase in [
+                            "gold house", "nasdaq", "power summit", "a100",
+                            "mike waltz", "left the chat", "night court",
+                            "season 3", "daily litg"
+                        ]):
+                            logger.warning(f"Skipping unwanted article: {title}")
+                            continue
+                            
+                        trends.append(title)
+                        
+                    logger.info(f"Fetched {len(trends)} trends for category '{category}'")
+                    all_trends.extend(trends)
+                else:
+                    logger.warning(f"No articles returned for category '{category}'")
+            
+            # Deduplicate and limit
+            unique_trends = list(dict.fromkeys(all_trends))
+            logger.info(f"Fetched {len(unique_trends)} unique Google trends")
+            
+            if not unique_trends:
+                logger.error("API failed - no trends fetched")
+                return []
+            
+            return unique_trends[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error fetching Google trends: {str(e)}")
+            logger.error("API failed due to error")
             return []
-
-        titles = [a.get("title", "").strip() for a in articles]
-
-        logger.info(f"Fetched {len(titles)} news titles: {titles}")
-
-        return titles[:limit]
-
-async def main():
-    fetcher = TrendsFetcher()
-
-    print("\nFetching News trends...\n")
-
-    news_trends = await fetcher.fetch_trends("news", limit=5)
-
-    print("News Trends:")
-
-    for trend in news_trends:
-        print(f"- {trend}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    
+    def _get_fallback_trends(self, limit: int) -> List[str]:
+        """Get fallback trends in case API calls fail."""
+        logger.warning("Using fallback trends due to API issues")
+        
+        fallback_trends = [
+            "Latest developments in artificial intelligence",
+            "Climate change mitigation strategies",
+            "Global economic outlook for 2025",
+            "Advancements in renewable energy technology",
+            "Space exploration milestones",
+            "Healthcare innovation and medical breakthroughs",
+            "Cybersecurity challenges and solutions",
+            "Digital transformation in business",
+            "Sustainable development initiatives",
+            "Geopolitical shifts and international relations"
+        ]
+        
+        return fallback_trends[:limit]

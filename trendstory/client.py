@@ -5,8 +5,8 @@ import grpc
 import logging
 from typing import Dict, Any, Optional
 
-from proto import trendstory_pb2
-from proto import trendstory_pb2_grpc
+from trendstory.proto import trendstory_pb2
+from trendstory.proto import trendstory_pb2_grpc
 from .config import settings
 
 logger = logging.getLogger(__name__)

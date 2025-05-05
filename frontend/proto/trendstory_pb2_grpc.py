@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from proto import trendstory_pb2 as proto_dot_trendstory__pb2
+from proto import trendstory_pb2 as trendstory__pb2
 
 
 class TrendStoryStub(object):
@@ -17,8 +17,8 @@ class TrendStoryStub(object):
         """
         self.Generate = channel.unary_unary(
                 '/trendstory.TrendStory/Generate',
-                request_serializer=proto_dot_trendstory__pb2.GenerateRequest.SerializeToString,
-                response_deserializer=proto_dot_trendstory__pb2.GenerateResponse.FromString,
+                request_serializer=trendstory__pb2.GenerateRequest.SerializeToString,
+                response_deserializer=trendstory__pb2.GenerateResponse.FromString,
                 )
 
 
@@ -38,8 +38,8 @@ def add_TrendStoryServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Generate': grpc.unary_unary_rpc_method_handler(
                     servicer.Generate,
-                    request_deserializer=proto_dot_trendstory__pb2.GenerateRequest.FromString,
-                    response_serializer=proto_dot_trendstory__pb2.GenerateResponse.SerializeToString,
+                    request_deserializer=trendstory__pb2.GenerateRequest.FromString,
+                    response_serializer=trendstory__pb2.GenerateResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -64,7 +64,7 @@ class TrendStory(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/trendstory.TrendStory/Generate',
-            proto_dot_trendstory__pb2.GenerateRequest.SerializeToString,
-            proto_dot_trendstory__pb2.GenerateResponse.FromString,
+            trendstory__pb2.GenerateRequest.SerializeToString,
+            trendstory__pb2.GenerateResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

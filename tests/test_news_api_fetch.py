@@ -49,12 +49,12 @@ if __name__ == "__main__":
 
     load_dotenv()  
     
-    API_KEY = os.getenv("NEWS_API_KEY")
-
+    #API_KEY = os.getenv("NEWS_API_KEY")
+    API_KEY = "2041b0a1ad3f4118bad3d68751263fc2"
     # print(f"API_KEY: {API_KEY}")  # For, testing
 
     # Query and date range for last 24 hours
-    query = "Technology"
+    query = "AI"
     # from_date = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
     from_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 

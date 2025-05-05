@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package trendstory;
+
+// Service definition for TrendStory microservice
+service TrendStory {
+  // Generates a themed story based on trending topics
+  rpc Generate(GenerateRequest) returns (GenerateResponse) {}
+}
+
+// Request message for Generate RPC
+message GenerateRequest {
+  // Source of trending topics (e.g., "youtube", "tiktok", "google")
+  string source = 1;
+  
+  // Theme for the story (e.g., "comedy", "tragedy", "sarcasm")
+  string theme = 2;
+  
+  // Maximum number of trending topics to include
+  int32 limit = 3;
+  
+  // Path to image for mood recognition
+  string image_path = 4;
+}
+
+// Response message for Generate RPC
+message GenerateResponse {
+  // The generated story
+  string story = 1;
+  
+  // Status code (0 for success, non-zero for errors)
+  int32 status_code = 2;
+  
+  // Error message (empty if successful)
+  string error_message = 3;
+  
+  // List of trending topics that were used in the story
+  repeated string topics_used = 4;
+  
+  // Metadata about the generated story
+  StoryMetadata metadata = 5;
+  
+  // Detected mood from image
+  string detected_mood = 6;
+}
+
+// Metadata about the generated story
+message StoryMetadata {
+  // When the story was generated
+  string generation_time = 1;
+  
+  // Name of the LLM model used
+  string model_name = 2;
+  
+  // Source of trending topics
+  string source = 3;
+  
+  // Theme used for generation
+  string theme = 4;
+  
+  // Mood used in story generation
+  string mood = 5;
+}

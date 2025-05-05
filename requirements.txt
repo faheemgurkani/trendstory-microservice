@@ -1,5 +1,5 @@
 # Core dependencies
-fastapi
+# fastapi
 uvicorn
 pydantic
 pydantic-settings
@@ -10,21 +10,23 @@ grpcio
 grpcio-tools
 protobuf
 
-# LLM and NLP dependencies
-transformers
-torch
-sentencepiece
-accelerate  # Required for transformers
-
 # API and data fetching
 google-api-python-client
 pytrends
-aiohttp
+aiohttp>=3.8.0  # Updated for Ollama API
 httpx
 requests
 
-# Streamlit dependencies (for the web interface)
-streamlit
+# Image processing and AI
+fer  # Facial Expression Recognition
+opencv-python  # Added for camera capture
+tensorflow>=2.0.0  # Required by fer
+mtcnn>=0.1.0  # Better face detection for fer
+moviepy  # Required by fer for video processing
+pillow  # Required for image processing
+rembg  # Added for background removal
+onnxruntime  # Required by rembg for background removal
+deepface  # Added explicitly for facial recognition and emotion detection
 
 # Testing
 pytest

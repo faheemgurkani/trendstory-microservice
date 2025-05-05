@@ -10,7 +10,7 @@ from concurrent import futures
 
 from .service import TrendStoryServicer
 from .config import settings
-from proto import trendstory_pb2_grpc
+from trendstory.proto import trendstory_pb2_grpc
 
 # Configure logging
 logging.basicConfig(
