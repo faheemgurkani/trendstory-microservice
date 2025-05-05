@@ -10,7 +10,8 @@ import grpc
 from trendstory.llm_engine import LLMEngine
 from trendstory.trends_fetcher import TrendsFetcher
 from trendstory.mood_recognizer import MoodRecognizer
-from proto import trendstory_pb2, trendstory_pb2_grpc
+from trendstory.proto import trendstory_pb2, trendstory_pb2_grpc
+from trendstory.config import settings  # Import settings
 
 # Configure logging
 class SpacedFormatter(logging.Formatter):
@@ -90,41 +91,62 @@ class TrendStoryServicer(trendstory_pb2_grpc.TrendStoryServicer):
                 context.set_details(error_msg)
                 return trendstory_pb2.GenerateResponse()
             
+            # Let LLM select theme based on mood if no theme provided
+            selected_theme = request.theme
+            if not selected_theme and detected_mood:
+                try:
+                    selected_theme = await self.llm_engine.select_theme_for_mood(detected_mood)
+                    logger.info(f"LLM selected theme '{selected_theme}' based on mood '{detected_mood}'")
+                except Exception as e:
+                    logger.error(f"Error selecting theme for mood: {str(e)}")
+                    selected_theme = "comedy"  # Default to comedy if theme selection fails
+            elif not selected_theme:
+                selected_theme = "comedy"  # Default theme if no mood and no theme provided
+
+            # Ensure we have a valid theme
+            if not selected_theme or selected_theme.strip() == "":
+                selected_theme = "comedy"
+                logger.warning("No theme selected, defaulting to 'comedy'")
+            
             # Generate story
-            logger.info(f"Generating story with theme: {request.theme}")
+            logger.info(f"Generating story with theme: {selected_theme}")
             result = await self.llm_engine.generate_story(
                 topics=topics,
-                theme=request.theme,
-                mood=detected_mood  # Pass detected mood to story generation
+                theme=selected_theme,  # Use the selected theme here
+                mood=detected_mood
             )
-            logger.info("Story generated successfully")
+            logger.info(f"Story generated successfully with theme: {selected_theme}")
             
-            # Create metadata
+            # Create metadata with guaranteed theme
             metadata = trendstory_pb2.StoryMetadata(
                 generation_time=time.strftime("%Y-%m-%d %H:%M:%S"),
-                model_name=os.getenv("TRENDSTORY_MODEL_NAME", "t5-small"),
+                model_name=settings.MODEL_NAME,
                 source=request.source,
-                theme=request.theme,
-                mood=detected_mood or "neutral"  # Include mood in metadata
+                theme=selected_theme,  # Theme is guaranteed to have a value now
+                mood=detected_mood or "neutral"
             )
             
+            # Create response with all required fields
             response = trendstory_pb2.GenerateResponse(
                 story=result["story"],
                 status_code=0,
                 error_message="",
                 topics_used=topics,
                 metadata=metadata,
-                detected_mood=detected_mood or "neutral"  # Include detected mood in response
+                detected_mood=detected_mood or "neutral"
             )
-            logger.info("Response prepared successfully")
+            logger.info(f"Response prepared successfully with theme: {selected_theme}")
             return response
             
         except Exception as e:
-            error_msg = f"Error generating story: {str(e)}"
-            logger.error(error_msg)
+            error_msg = str(e)
+            logger.error(f"Error in Generate: {error_msg}")
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(error_msg)
-            return trendstory_pb2.GenerateResponse()
+            return trendstory_pb2.GenerateResponse(
+                status_code=1,
+                error_message=error_msg
+            )
 
 async def serve():
     """Start the gRPC server."""

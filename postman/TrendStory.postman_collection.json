@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a7e8f5d9-c1b7-4d34-8e3a-5d9c1b734e45",
     "name": "TrendStory Microservice",
-    "description": "Collection for testing the TrendStory gRPC service that generates themed stories based on trending topics.",
+    "description": "Collection for testing the TrendStory gRPC service that generates themed stories based on trending topics.\n\n**Note:** This backend is a gRPC service, not a REST API. Use a gRPC client (such as grpcurl, BloomRPC, Kreya, or Postman's gRPC tab) to interact with the service. The requests below are for documentation/example purposes only. See the proto definitions for message formats.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -130,6 +130,57 @@
           "path": ["trendstory.TrendStory", "Generate"]
         },
         "description": "Generate a sarcastic story based on Google trending topics"
+      }
+    },
+    {
+      "name": "Generate Story with Mood Detection",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has story and mood fields\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('story');",
+              "    pm.expect(jsonData).to.have.property('detected_mood');",
+              "    pm.expect(jsonData.story).to.be.a('string');",
+              "    pm.expect(jsonData.detected_mood).to.be.a('string');",
+              "});",
+              "",
+              "pm.test(\"Response has theme in metadata\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('metadata');",
+              "    pm.expect(jsonData.metadata).to.have.property('theme');",
+              "    pm.expect(jsonData.metadata.theme).to.be.a('string');",
+              "    pm.expect(jsonData.metadata.theme.length).to.be.greaterThan(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"source\": \"youtube\",\n    \"theme\": \"\",\n    \"limit\": 5,\n    \"image_path\": \"{{image_path}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/trendstory.TrendStory/Generate",
+          "host": ["{{base_url}}"],
+          "path": ["trendstory.TrendStory", "Generate"]
+        },
+        "description": "Generate a story based on mood detected from the provided image. The theme is automatically selected based on the detected mood."
       }
     },
     {

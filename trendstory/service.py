@@ -11,8 +11,8 @@ from .llm_engine import LLMEngine
 from .config import settings
 
 # Import generated gRPC code
-from proto import trendstory_pb2
-from proto import trendstory_pb2_grpc
+from trendstory.proto import trendstory_pb2
+from trendstory.proto import trendstory_pb2_grpc
 
 logger = logging.getLogger(__name__)
 

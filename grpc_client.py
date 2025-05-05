@@ -5,7 +5,9 @@ import logging
 import os
 import sys
 import grpc
-from proto import trendstory_pb2, trendstory_pb2_grpc
+from trendstory.proto import trendstory_pb2, trendstory_pb2_grpc
+from trendstory.config import settings  # Import settings
+from trendstory.camera_capture import CameraCapture  # Import camera capture
 
 # Configure logging
 class SpacedFormatter(logging.Formatter):
@@ -97,16 +99,32 @@ class TrendStoryClient:
 async def main():
     """Example usage of the TrendStory client."""
     logger.info("Starting client example")
-    client = TrendStoryClient()
+    
+    # Use settings from config
+    client = TrendStoryClient(
+        host=settings.HOST,
+        port=settings.PORT
+    )
     
     try:
+        # Capture photo from camera
+        logger.info("Initializing camera for mood capture...")
+        camera = CameraCapture()
+        try:
+            logger.info("Taking photo with background removal...")
+            image_path = camera.capture_photo(remove_bg=True)
+            logger.info(f"Photo captured and background removed: {image_path}")
+        except RuntimeError as e:
+            logger.error(f"Failed to capture photo: {e}")
+            return
+        
         # Generate a story
         logger.info("Requesting story generation")
         result = await client.generate_story(
-            theme="comedy",
+            theme=None,  # Let the LLM choose theme based on mood
             source="all",
             limit=3,
-            image_path="test_images/happy.png"  # Updated path to test_images directory
+            image_path=image_path  # Use the captured image
         )
         
         if result:
@@ -121,18 +139,26 @@ async def main():
             for topic in result["topics_used"]:
                 print(f"- {topic}")
             
-            print("\n" + "="*50)
-            print("Mood Information:")
-            print("="*50)
-            print(f"Detected Mood: {result['detected_mood']}")
-            print(f"Mood Used in Story: {result['metadata']['mood']}")
+            # Get theme from metadata, defaulting to 'comedy' if not present
+            theme = result["metadata"].get("theme", "comedy")
             
             print("\n" + "="*50)
-            print("Metadata:")
+            print("Story Theme Selection:")
             print("="*50)
-            for key, value in result["metadata"].items():
-                print(f"{key}: {value}")
+            print(f"1. Detected Mood from Photo: {result['detected_mood']}")
+            print(f"2. Selected Theme Based on Mood: {theme}")  # Use the theme we extracted
+            print(f"3. Story Generated Using Theme: {theme}")  # Use the same theme
+            
+            print("\n" + "="*50)
+            print("Generation Details:")
+            print("="*50)
+            print(f"Time: {result['metadata']['generation_time']}")
+            print(f"Model: {result['metadata']['model_name']}")
+            print(f"Source: {result['metadata']['source']}")
             print()
+            
+            logger.info(f"Photo saved in CAMERAPIC folder: {image_path}")
+            logger.info(f"Story generated with theme: {theme}")  # Log the theme
         else:
             logger.error("Failed to generate story")
     

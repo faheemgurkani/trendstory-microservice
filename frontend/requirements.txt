@@ -1,0 +1,9 @@
+streamlit>=1.25.0
+requests>=2.25.0
+pillow>=8.0.0
+opencv-python>=4.5.0
+numpy>=1.19.0
+python-dotenv>=0.15.0
+grpcio>=1.41.0
+grpcio-tools>=1.41.0
+protobuf>=3.19.0 

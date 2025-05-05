@@ -7,15 +7,20 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+      - "50051:50051"
     volumes:
       - .:/app
+      - camera_pics:/app/CAMERAPIC
+      - model_cache:/root/.u2net
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
-    command: uvicorn server:app --host 0.0.0.0 --port 8000 --reload
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s 
+      - TRENDSTORY_HOST=0.0.0.0
+      - TRENDSTORY_PORT=50051
+    devices:
+      - /dev/video0:/dev/video0
+    restart: unless-stopped
+
+volumes:
+  camera_pics:
+  model_cache: 

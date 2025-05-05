@@ -27,8 +27,8 @@ class TestTrendStoryIntegration(unittest.TestCase):
         os.environ["TRENDSTORY_HOST"] = "localhost"
         os.environ["TRENDSTORY_PORT"] = "50052"  # Use different port for testing
         os.environ["TRENDSTORY_DEBUG"] = "true"
-        os.environ["TRENDSTORY_MODEL_NAME"] = "t5-small"
-        os.environ["TRENDSTORY_MODEL_CACHE_DIR"] = "./test_model_cache"
+        os.environ["TRENDSTORY_MODEL_NAME"] = "dolphin3:latest"  # Use Dolphin model
+        os.environ["TRENDSTORY_OLLAMA_API_URL"] = "http://localhost:11434/api/generate"  # Add Ollama API URL
         
         # Start server with test configuration
         cls.server_process = subprocess.Popen(
@@ -84,7 +84,7 @@ class TestTrendStoryIntegration(unittest.TestCase):
             # Verify metadata
             self.assertEqual(result["metadata"]["source"], "youtube")
             self.assertEqual(result["metadata"]["theme"], "comedy")
-            self.assertEqual(result["metadata"]["model_name"], "t5-small")
+            self.assertEqual(result["metadata"]["model_name"], "dolphin3:latest")
             
         finally:
             await self.client.close()

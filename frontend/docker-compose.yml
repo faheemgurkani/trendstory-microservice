@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_HOST=host.docker.internal
+      - BACKEND_PORT=50051
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped 
